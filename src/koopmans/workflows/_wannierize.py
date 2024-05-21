@@ -144,6 +144,7 @@ class WannierizeWorkflow(Workflow):
         if self.parameters.init_orbitals in ['mlwfs', 'projwfs'] \
                 and self.parameters.init_empty_orbitals in ['mlwfs', 'projwfs']:
             # Loop over the various subblocks that we must wannierize separately
+            wannier90_calcs = []
             for block in self.projections:
                 n_occ_bands = self.number_of_electrons(block.spin)
                 if not block.spin:
@@ -169,29 +170,40 @@ class WannierizeWorkflow(Workflow):
                 # Construct the subdirectory label
                 w90_dir = Path('wannier') / block.directory
 
-                # 1) pre-processing Wannier90 calculation
-                calc_w90 = self.new_calculator(calc_type, init_orbitals=init_orbs, directory=w90_dir,
-                                               **block.w90_kwargs)
-                calc_w90.prefix = 'wann_preproc'
-                calc_w90.command.flags = '-pp'
-                self.run_calculator(calc_w90)
-                utils.system_call(f'rsync -a {calc_w90.directory}/wann_preproc.nnkp {calc_w90.directory}/wann.nnkp')
+                
+                if self.parameters.mode == "ase":
+                    # 1) pre-processing Wannier90 calculation
+                    calc_w90 = self.new_calculator(calc_type, init_orbitals=init_orbs, directory=w90_dir,
+                                                **block.w90_kwargs)
+                    calc_w90.prefix = 'wann_preproc'
+                    calc_w90.command.flags = '-pp'
+                    self.run_calculator(calc_w90)
+                    utils.system_call(f'rsync -a {calc_w90.directory}/wann_preproc.nnkp {calc_w90.directory}/wann.nnkp')
 
-                # 2) standard pw2wannier90 calculation
-                calc_p2w = self.new_calculator('pw2wannier', directory=w90_dir,
-                                               spin_component=block.spin)
-                self.link(calc_nscf, calc_nscf.parameters.outdir, calc_p2w, calc_p2w.parameters.outdir)
-                calc_p2w.prefix = 'pw2wan'
-                self.run_calculator(calc_p2w)
+                    # 2) standard pw2wannier90 calculation
+                    calc_p2w = self.new_calculator('pw2wannier', directory=w90_dir,
+                                                spin_component=block.spin)
+                    self.link(calc_nscf, calc_nscf.parameters.outdir, calc_p2w, calc_p2w.parameters.outdir)
+                    calc_p2w.prefix = 'pw2wan'
+                    self.run_calculator(calc_p2w)
 
-                # 3) Wannier90 calculation
-                calc_w90 = self.new_calculator(calc_type, directory=w90_dir,
-                                               init_orbitals=init_orbs,
-                                               bands_plot=self.parameters.calculate_bands,
-                                               **block.w90_kwargs)
+                    # 3) Wannier90 calculation
+                    calc_w90 = self.new_calculator(calc_type, directory=w90_dir,
+                                                init_orbitals=init_orbs,
+                                                bands_plot=self.parameters.calculate_bands,
+                                                **block.w90_kwargs)
+                else: # MB: still a little bit hard-coded
+                    calc_w90 = self.new_calculator(calc_type, directory=w90_dir,
+                                                init_orbitals=init_orbs,
+                                                bands_plot=self.parameters.calculate_bands,
+                                                **block.w90_kwargs)
+                    self.link(calc_nscf, calc_nscf.parameters.outdir, calc_w90, w90_dir)
+                
                 calc_w90.prefix = 'wann'
-                self.run_calculator(calc_w90)
+                wannier90_calcs.append(calc_w90)
+                #self.run_calculator(calc_w90)
 
+            if self.parameters.mode == "ase": #skipping this for now, as it should be done after the self.run_calculators. 
                 if hasattr(self, 'bands'):
                     # Add centers and spreads info to self.bands
                     if block.spin is None:
@@ -215,6 +227,8 @@ class WannierizeWorkflow(Workflow):
                             match.center = center
                             match.spread = spread
 
+            self.run_calculators(wannier90_calcs)
+            
             # Merging Hamiltonian files, U matrix files, centers files if necessary
             if True:  # self.parent is not None:
                 utils.warn('manually forcing the merging of the wannier files')

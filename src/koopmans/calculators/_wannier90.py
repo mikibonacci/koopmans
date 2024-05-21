@@ -19,6 +19,11 @@ from koopmans.utils import CalculatorNotConvergedWarning, warn
 
 from ._utils import CalculatorABC, CalculatorExt
 
+try:
+    from aiida_koopmans.helpers import aiida_read_results_trigger
+    has_aiida = True
+except:
+    has_aiida = False
 
 class Wannier90Calculator(CalculatorExt, Wannier90, CalculatorABC):
     ext_in = '.win'
@@ -50,3 +55,7 @@ class Wannier90Calculator(CalculatorExt, Wannier90, CalculatorABC):
         elif not self.is_converged():
             warn(f'{self.directory}/{self.prefix} did not converge; proceed with caution',
                  CalculatorNotConvergedWarning)
+            
+    @aiida_read_results_trigger
+    def read_results(self):
+        super().read_results()   

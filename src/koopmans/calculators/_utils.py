@@ -37,6 +37,11 @@ from numpy import typing as npt
 
 from koopmans import settings, utils
 
+try:
+    from aiida_koopmans.helpers import aiida_pre_calculate_trigger, aiida_calculate_trigger, aiida_post_calculate_trigger
+    has_aiida = True
+except:
+    has_aiida = False
 
 def sanitize_filenames(filenames: Union[str, Path, List[str], List[Path]], ext_in: str, ext_out: str) -> List[Path]:
     # Generic function for sanitizing the input of CalculatorExt.fromfile()
@@ -143,6 +148,7 @@ class CalculatorExt():
         # Then run any post-calculation steps
         self._post_calculate()
 
+    @aiida_post_calculate_trigger
     def _post_calculate(self):
         """Perform any necessary post-calculation steps after running the calculation"""
 
@@ -174,6 +180,7 @@ class CalculatorExt():
                 dest_filename.parent.mkdir(parents=True, exist_ok=True)
                 utils.symlink(src_filename, dest_filename)
 
+    @aiida_pre_calculate_trigger
     def _pre_calculate(self):
         """Perform any necessary pre-calculation steps before running the calculation"""
 
@@ -185,6 +192,7 @@ class CalculatorExt():
 
         return
 
+    @aiida_calculate_trigger
     def _calculate(self):
         """Run the calculation using the ASE calculator's calculate() method
 
