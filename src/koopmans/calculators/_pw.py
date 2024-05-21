@@ -20,6 +20,12 @@ from koopmans.settings import PWSettingsDict
 
 from ._utils import CalculatorABC, CalculatorExt, ReturnsBandStructure
 
+try:
+    from aiida_koopmans.helpers import aiida_read_results_trigger
+    has_aiida = True
+except:
+    has_aiida = False
+
 
 class PWCalculator(CalculatorExt, Espresso, ReturnsBandStructure, CalculatorABC):
     # Subclass of CalculatorExt for performing calculations with pw.x
@@ -65,6 +71,10 @@ class PWCalculator(CalculatorExt, Espresso, ReturnsBandStructure, CalculatorABC)
 
         return
 
+    @aiida_read_results_trigger
+    def read_results(self):
+        super().read_results()
+    
     def is_complete(self):
         return self.results.get('job done', False)
 

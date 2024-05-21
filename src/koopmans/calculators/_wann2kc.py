@@ -16,6 +16,11 @@ from koopmans.settings import Wann2KCSettingsDict
 
 from ._utils import CalculatorABC, KCWannCalculator
 
+try:
+    from aiida_koopmans.helpers import aiida_read_results_trigger
+    has_aiida = True
+except:
+    has_aiida = False
 
 class Wann2KCCalculator(KCWannCalculator, Wann2KC, CalculatorABC):
     # Subclass of KCWannCalculator for converting Wannier functions to a KCW format with kcw.x
@@ -37,3 +42,7 @@ class Wann2KCCalculator(KCWannCalculator, Wann2KC, CalculatorABC):
 
     def is_complete(self):
         return self.results['job_done']
+    
+    @aiida_read_results_trigger
+    def read_results(self):
+        super().read_results()

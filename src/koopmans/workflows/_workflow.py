@@ -55,6 +55,12 @@ from koopmans.pseudopotentials import (fetch_pseudo, nelec_from_pseudos,
                                        valence_from_pseudo)
 from koopmans.references import bib_data
 
+try:
+    from aiida_koopmans.helpers import aiida_link_trigger
+    has_aiida = True
+except:
+    has_aiida = False
+
 T = TypeVar('T', bound='calculators.CalculatorExt')
 W = TypeVar('W', bound='Workflow')
 
@@ -685,6 +691,12 @@ class Workflow(ABC):
                 self.link(None, self.parameters.pseudo_directory / pseudo, calc, Path('pseudopotentials') / pseudo)
             calc.parameters.pseudo_dir = 'pseudopotentials'
 
+        # Checking if we want to use AiiDA
+        if hasattr(self.parameters,"mode"):
+            calc.parameters.mode = self.parameters.mode
+        else:
+            calc.parameters.mode="ase"
+        
         return calc
 
     def primitive_to_supercell(self, matrix: Optional[npt.NDArray[np.int_]] = None, **kwargs):
@@ -859,8 +871,12 @@ class Workflow(ABC):
                 calcs_to_run.append(calc)
 
         self._run_calculators(calcs_to_run)
-
+        
         for calc in calcs_to_run:
+            while not calc.wchain.is_finished: # waiting for all the WorkChains to finish, workfunction style...
+                pass
+            # if finished, we read the results.
+            calc.read_results()
             self._post_run_calculator(calc)
 
     def load_old_calculator(self, qe_calc: calculators.Calc) -> bool:
@@ -886,6 +902,7 @@ class Workflow(ABC):
 
         return old_calc.is_complete()
 
+    @aiida_link_trigger
     def link(self, src_calc: calculators.Calc | None, src_path: Path, dest_calc: calculators.Calc, dest_path: Path) -> None:
         """
         Link a file from one calculator to another
