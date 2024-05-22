@@ -875,10 +875,11 @@ class Workflow(ABC):
         self._run_calculators(calcs_to_run)
         
         for calc in calcs_to_run:
-            while not calc.wchain.is_finished: # waiting for all the WorkChains to finish, workfunction style...
-                pass
-            # if finished, we read the results.
-            calc.read_results()
+            if hasattr(calc,"wchain"):
+                while not calc.wchain.is_finished: # waiting for all the WorkChains to finish, workfunction style, no checkpoints.
+                    pass
+                # if finished, we read the results.
+                calc.read_results()
             self._post_run_calculator(calc)
 
     def run_process(self, process: Process):
