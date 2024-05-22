@@ -184,6 +184,7 @@ class WannierizeWorkflow(Workflow):
                                                 init_orbitals=init_orbs,
                                                 bands_plot=self.parameters.calculate_bands,
                                                 **block.w90_kwargs)
+                    self.link(calc_p2w, calc_p2w.parameters.outdir, calc_w90, w90_dir)
                 else: # MB: still a little bit hard-coded
                     calc_w90 = self.new_calculator(calc_type, directory=w90_dir,
                                                 init_orbitals=init_orbs,
@@ -193,9 +194,10 @@ class WannierizeWorkflow(Workflow):
                 
                 calc_w90.prefix = 'wann'
                 wannier90_calcs.append(calc_w90)
-                #self.run_calculator(calc_w90)
 
-            if self.parameters.mode == "ase": #skipping this for now, as it should be done after the self.run_calculators. 
+            self.run_calculators(wannier90_calcs)
+            
+            for block, calc_w90 in list(zip(self.projections, wannier90_calcs)):
                 if hasattr(self, 'bands'):
                     # Add centers and spreads info to self.bands
                     if block.spin is None:
@@ -218,8 +220,6 @@ class WannierizeWorkflow(Workflow):
                             [match] = [b for b in self.bands if b.index == band.index and b.spin == 1]
                             match.center = center
                             match.spread = spread
-
-            self.run_calculators(wannier90_calcs)
             
             # Merging Hamiltonian files, U matrix files, centers files if necessary
             if self.parent is not None:
