@@ -17,7 +17,12 @@ from koopmans.commands import ParallelCommandWithPostfix
 
 from ._utils import CalculatorABC, KCWannCalculator
 
-
+try:
+    from aiida_koopmans.helpers import aiida_read_results_trigger
+    has_aiida = True
+except:
+    has_aiida = False
+    
 class KoopmansScreenCalculator(KCWannCalculator, KoopmansScreen, CalculatorABC):
     # Subclass of KCWannCalculator for calculating screening parameters with kcw.x
     ext_in = '.ksi'
@@ -49,3 +54,7 @@ class KoopmansScreenCalculator(KCWannCalculator, KoopmansScreen, CalculatorABC):
     def check_convergence(self) -> None:
         # is_converged has not been implemented yet for this calculator
         return
+    
+    @aiida_read_results_trigger
+    def read_results(self):
+        super().read_results()

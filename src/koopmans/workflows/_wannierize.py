@@ -33,6 +33,12 @@ from ._merge_wannier import (MergeProcess, merge_wannier_centers_file_contents,
                              merge_wannier_u_file_contents)
 from ._workflow import Workflow
 
+try:
+    from aiida_koopmans.data.utils import produce_wannier90_files
+    has_aiida = True
+except:
+    has_aiida = False
+
 CalcExtType = TypeVar('CalcExtType', bound='calculators.CalculatorExt')
 
 
@@ -145,6 +151,7 @@ class WannierizeWorkflow(Workflow):
                 and self.parameters.init_empty_orbitals in ['mlwfs', 'projwfs']:
             # Loop over the various subblocks that we must wannierize separately
             wannier90_calcs = []
+            self.w90_files = {}
             for block in self.projections:
                 n_occ_bands = self.number_of_electrons(block.spin)
                 if not block.spin:
@@ -232,11 +239,18 @@ class WannierizeWorkflow(Workflow):
             # Merging Hamiltonian files, U matrix files, centers files if necessary
             if True:  # self.parent is not None:
                 utils.warn('manually forcing the merging of the wannier files')
-                for merge_directory, block in self.projections.to_merge.items():
+                for (merge_directory, block), calc_w90 in list(zip(self.projections.to_merge.items(),wannier90_calcs)):
                     if len(block) == 1:
-                        with utils.chdir('wannier'):
-                            utils.symlink(block[0].directory, merge_directory,
-                                          exist_ok=not self.parameters.from_scratch)
+                        if self.parameters.mode == "ase":
+                            with utils.chdir('wannier'):
+                                utils.symlink(block[0].directory, merge_directory,
+                                            exist_ok=not self.parameters.from_scratch)
+                        else:
+                            self.w90_files[merge_directory.name] = produce_wannier90_files(
+                                calc_w90,
+                                merge_directory.name,
+                                method=self.parameters.method,
+                                )
                     else:
                         self.merge_wannier_files(block, merge_directory, prefix=calc_w90.prefix)
 
@@ -248,7 +262,7 @@ class WannierizeWorkflow(Workflow):
                             # extend_proc = Process(merge_function=extend_wannier_u_dis_file)
                             # self.extend_wannier_u_dis_file(block, merge_directory, prefix=calc_w90.prefix)
 
-        if self.parameters.calculate_bands:
+        if self.parameters.calculate_bands and self.parameters.mode == "ase":
             # Run a "bands" calculation, making sure we don't overwrite
             # the scf/nscf tmp files by setting a different prefix
             calc_pw_bands = self.new_calculator('pw', calculation='bands', kpts=self.kpoints.path)

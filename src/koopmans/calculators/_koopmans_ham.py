@@ -19,7 +19,12 @@ from koopmans.commands import ParallelCommand
 
 from ._utils import CalculatorABC, KCWannCalculator, ReturnsBandStructure
 
-
+try:
+    from aiida_koopmans.helpers import aiida_write_alphas_trigger, aiida_read_results_trigger
+    has_aiida = True
+except:
+    has_aiida = False
+    
 class KoopmansHamCalculator(KCWannCalculator, KoopmansHam, ReturnsBandStructure, CalculatorABC):
     # Subclass of KCWannCalculator for calculating the Koopmans Hamiltonian with kcw.x
     ext_in = '.khi'
@@ -37,7 +42,12 @@ class KoopmansHamCalculator(KCWannCalculator, KoopmansHam, ReturnsBandStructure,
 
         # Store the alphas
         self.alphas = alphas
-
+    
+    @aiida_read_results_trigger
+    def read_results(self):
+        super().read_results()
+    
+    @aiida_write_alphas_trigger
     def write_alphas(self):
         # self.alphas is a list of alpha values indexed by spin index and then band index. Meanwhile, kcw.x takes a
         # single file for the alphas (rather than splitting between filled/empty) and does not have two columns for
@@ -55,6 +65,10 @@ class KoopmansHamCalculator(KCWannCalculator, KoopmansHam, ReturnsBandStructure,
 
     def _post_calculate(self):
         super()._post_calculate()
+        if hasattr(self,"wchain"):
+            while not self.wchain.is_finished:
+                pass
+        self.read_results()
         if isinstance(self.parameters.kpts, BandPath) and len(self.parameters.kpts.kpts) > 1:
             # Add the bandstructure to the results
             self.generate_band_structure()
