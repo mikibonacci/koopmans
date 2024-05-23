@@ -261,7 +261,7 @@ class WannierizeWorkflow(Workflow):
                             # extend_proc = Process(merge_function=extend_wannier_u_dis_file)
                             # self.extend_wannier_u_dis_file(block, merge_directory, prefix=calc_w90.prefix)
 
-        if self.parameters.calculate_bands:
+        if self.parameters.calculate_bands and self.parameters.mode == "ase":
             # Run a "bands" calculation, making sure we don't overwrite
             # the scf/nscf tmp files by setting a different prefix
             calc_pw_bands = self.new_calculator('pw', calculation='bands', kpts=self.kpoints.path)

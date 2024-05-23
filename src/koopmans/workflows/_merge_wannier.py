@@ -9,7 +9,12 @@ from pydantic import BaseModel
 from koopmans import calculators, projections, utils
 from koopmans.process import Process
 
-
+try:
+    from aiida_koopmans.helpers import aiida_get_content_trigger, aiida_write_content_trigger
+    has_aiida = True
+except:
+    has_aiida = False
+    
 def merge_wannier_hr_file_contents(filecontents: List[List[str]]) -> List[str]:
     # Reading in each hr file in turn
     hr_list = []
@@ -152,13 +157,13 @@ class MergeProcess(Process):
 
         self.outputs = self._output_model(dst_file=self.inputs.dst_file)
 
-
+@aiida_get_content_trigger
 def get_content(calc: Union[calculators.Calc, Process], relpath: Path) -> List[str]:
     with open(calc.directory / relpath, 'r') as f:
         flines = f.readlines()
     return flines
 
-
+@aiida_write_content_trigger
 def write_content(dst_file: Path, merged_filecontents: List[str]):
     dst_file.parent.mkdir(parents=True, exist_ok=True)
     with open(dst_file, 'w') as f:
