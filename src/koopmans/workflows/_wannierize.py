@@ -35,7 +35,12 @@ from ._workflow import Workflow
 
 CalcExtType = TypeVar('CalcExtType', bound='calculators.CalculatorExt')
 
-
+try:
+    from aiida_koopmans.data.utils import produce_wannier90_files
+    has_aiida = True
+except:
+    has_aiida = False
+    
 class WannierizeWorkflow(Workflow):
 
     def __init__(self, *args, force_nspin2=False, scf_kgrid=None, **kwargs):
@@ -145,6 +150,7 @@ class WannierizeWorkflow(Workflow):
                 and self.parameters.init_empty_orbitals in ['mlwfs', 'projwfs']:
             # Loop over the various subblocks that we must wannierize separately
             wannier90_calcs = []
+            self.w90_files = {}
             for block in self.projections:
                 n_occ_bands = self.number_of_electrons(block.spin)
                 if not block.spin:

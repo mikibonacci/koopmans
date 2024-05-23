@@ -1,6 +1,6 @@
 import math
 from pathlib import Path
-from typing import Callable, List, Optional, Tuple, TypeVar
+from typing import Callable, List, Optional, Tuple, TypeVar, Union
 
 import numpy as np
 from ase import Atoms
@@ -153,7 +153,7 @@ class MergeProcess(Process):
         self.outputs = self._output_model(dst_file=self.inputs.dst_file)
 
 
-def get_content(calc: calculators.Calc | Process, relpath: Path) -> List[str]:
+def get_content(calc: Union[calculators.Calc, Process], relpath: Path) -> List[str]:
     with open(calc.directory / relpath, 'r') as f:
         flines = f.readlines()
     return flines
