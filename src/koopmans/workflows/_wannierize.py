@@ -234,9 +234,16 @@ class WannierizeWorkflow(Workflow):
                 utils.warn('manually forcing the merging of the wannier files')
                 for merge_directory, block in self.projections.to_merge.items():
                     if len(block) == 1:
-                        with utils.chdir('wannier'):
-                            utils.symlink(block[0].directory, merge_directory,
-                                          exist_ok=not self.parameters.from_scratch)
+                        if self.parameters.mode == "ase":
+                            with utils.chdir('wannier'):
+                                utils.symlink(block[0].directory, merge_directory,
+                                            exist_ok=not self.parameters.from_scratch)
+                        else:
+                            self.w90_files[merge_directory.name] = produce_wannier90_files(
+                                calc_w90,
+                                merge_directory.name,
+                                method=self.parameters.method,
+                                )
                     else:
                         self.merge_wannier_files(block, merge_directory, prefix=calc_w90.prefix)
 
