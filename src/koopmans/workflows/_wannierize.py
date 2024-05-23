@@ -204,6 +204,7 @@ class WannierizeWorkflow(Workflow):
                                                 init_orbitals=init_orbs,
                                                 bands_plot=self.parameters.calculate_bands,
                                                 **block.w90_kwargs)
+                    calc_w90.parameters.update(self.calculator_parameters["w90"])
                     self.link(calc_nscf, calc_nscf.parameters.outdir, calc_w90, w90_dir)
                 
                 calc_w90.prefix = 'wann'
@@ -397,20 +398,21 @@ class WannierizeWorkflow(Workflow):
             'merge_directory; this should not happen'
 
         # Merging the wannier_hr (Hamiltonian) files
-        merge_hr_proc = MergeProcess(merge_function=merge_wannier_hr_file_contents,
+        self.merge_hr_proc = MergeProcess(merge_function=merge_wannier_hr_file_contents,
                                      src_files=[(calc, Path(prefix + '_hr.dat')) for calc in src_calcs],
                                      dst_file=Path('wannier') / merge_directory / (prefix + '_hr.dat'))
-        self.run_process(merge_hr_proc)
+        self.run_process(self.merge_hr_proc)
 
         if self.parameters.method == 'dfpt' and self.parent is not None:
             # Merging the U (rotation matrix) files
-            merge_u_proc = MergeProcess(merge_function=merge_wannier_u_file_contents,
+            self.merge_u_proc = MergeProcess(merge_function=merge_wannier_u_file_contents,
                                         src_files=[(calc, Path(prefix + '_u.mat')) for calc in src_calcs],
                                         dst_file=Path('wannier') / merge_directory / (prefix + '_u.mat'))
-            self.run_process(merge_u_proc)
+            self.run_process(self.merge_u_proc)
 
             # Merging the wannier centers files
-            merge_centers_proc = MergeProcess(merge_function=partial(merge_wannier_centers_file_contents, atoms=self.atoms),
+            self.merge_centers_proc = MergeProcess(merge_function=partial(merge_wannier_centers_file_contents, atoms=self.atoms),
                                               src_files=[(calc, Path(prefix + '_centres.xyz')) for calc in src_calcs],
                                               dst_file=Path('wannier') / merge_directory / (prefix + '_centres.xyz'))
-            self.run_process(merge_centers_proc)
+            self.run_process(self.merge_centers_proc)
+        

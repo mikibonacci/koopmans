@@ -153,8 +153,8 @@ class MergeProcess(Process):
 
         merged_filecontents = self.merge_function(filecontents)
 
-        write_content(self.inputs.dst_file, merged_filecontents)
-
+        write_content(self.inputs.dst_file, merged_filecontents, actor=self)
+        
         self.outputs = self._output_model(dst_file=self.inputs.dst_file)
 
 @aiida_get_content_trigger
@@ -164,7 +164,7 @@ def get_content(calc: Union[calculators.Calc, Process], relpath: Path) -> List[s
     return flines
 
 @aiida_write_content_trigger
-def write_content(dst_file: Path, merged_filecontents: List[str]):
+def write_content(dst_file: Path, merged_filecontents: List[str], actor=None):
     dst_file.parent.mkdir(parents=True, exist_ok=True)
     with open(dst_file, 'w') as f:
         f.write('\n'.join(merged_filecontents))
