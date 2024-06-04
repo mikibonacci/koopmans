@@ -56,12 +56,6 @@ from koopmans.pseudopotentials import (fetch_pseudo, nelec_from_pseudos,
                                        valence_from_pseudo)
 from koopmans.references import bib_data
 
-try:
-    from aiida_koopmans.helpers import aiida_link_trigger
-    has_aiida = True
-except:
-    has_aiida = False
-
 T = TypeVar('T', bound='calculators.CalculatorExt')
 W = TypeVar('W', bound='Workflow')
 
@@ -913,7 +907,6 @@ class Workflow(ABC):
 
         return old_calc.is_complete()
 
-    @aiida_link_trigger
     def link(self, src_calc: calculators.Calc | Process | None, src_path: Path, dest_calc: calculators.Calc, dest_path: Path) -> None:
         """
         Link a file from one calculator to another

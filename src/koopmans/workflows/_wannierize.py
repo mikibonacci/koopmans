@@ -36,10 +36,12 @@ from ._workflow import Workflow
 CalcExtType = TypeVar('CalcExtType', bound='calculators.CalculatorExt')
 
 try:
+    from aiida_koopmans.helpers import aiida_merge_wannier_files_trigger
     from aiida_koopmans.data.utils import produce_wannier90_files
     has_aiida = True
 except:
     has_aiida = False
+    raise
     
 class WannierizeWorkflow(Workflow):
 
@@ -379,6 +381,7 @@ class WannierizeWorkflow(Workflow):
 
         return calc
 
+    #@aiida_merge_wannier_files_trigger
     def merge_wannier_files(self, block: List[projections.ProjectionBlock], merge_directory: Path, prefix: str = 'wann'):
         """
         Merges the hr (Hamiltonian), u (rotation matrix), and wannier centers files of a collection of blocks that
@@ -398,21 +401,23 @@ class WannierizeWorkflow(Workflow):
             'merge_directory; this should not happen'
 
         # Merging the wannier_hr (Hamiltonian) files
-        self.merge_hr_proc = MergeProcess(merge_function=merge_wannier_hr_file_contents,
+        merge_hr_proc = MergeProcess(merge_function=merge_wannier_hr_file_contents,
                                      src_files=[(calc, Path(prefix + '_hr.dat')) for calc in src_calcs],
                                      dst_file=Path('wannier') / merge_directory / (prefix + '_hr.dat'))
-        self.run_process(self.merge_hr_proc)
+        self.run_process(merge_hr_proc)
 
         if self.parameters.method == 'dfpt' and self.parent is not None:
             # Merging the U (rotation matrix) files
-            self.merge_u_proc = MergeProcess(merge_function=merge_wannier_u_file_contents,
+            merge_u_proc = MergeProcess(merge_function=merge_wannier_u_file_contents,
                                         src_files=[(calc, Path(prefix + '_u.mat')) for calc in src_calcs],
                                         dst_file=Path('wannier') / merge_directory / (prefix + '_u.mat'))
-            self.run_process(self.merge_u_proc)
+            self.run_process(merge_u_proc)
 
             # Merging the wannier centers files
-            self.merge_centers_proc = MergeProcess(merge_function=partial(merge_wannier_centers_file_contents, atoms=self.atoms),
+            # not self., we can access the merge_ objects under self.processes 
+            # when do the link, iterate on the processes. 
+            merge_centers_proc = MergeProcess(merge_function=partial(merge_wannier_centers_file_contents, atoms=self.atoms),
                                               src_files=[(calc, Path(prefix + '_centres.xyz')) for calc in src_calcs],
                                               dst_file=Path('wannier') / merge_directory / (prefix + '_centres.xyz'))
-            self.run_process(self.merge_centers_proc)
+            self.run_process(merge_centers_proc)
         

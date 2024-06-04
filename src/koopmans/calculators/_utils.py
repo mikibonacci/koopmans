@@ -38,10 +38,11 @@ from numpy import typing as npt
 from koopmans import settings, utils
 
 try:
-    from aiida_koopmans.helpers import aiida_pre_calculate_trigger, aiida_calculate_trigger, aiida_post_calculate_trigger
+    from aiida_koopmans.helpers import aiida_check_code_is_installed_trigger, aiida_calculate_trigger, aiida_post_calculate_trigger, aiida_fetch_linked_files_trigger
     has_aiida = True
 except:
     has_aiida = False
+    raise
 
 def sanitize_filenames(filenames: Union[str, Path, List[str], List[Path]], ext_in: str, ext_out: str) -> List[Path]:
     # Generic function for sanitizing the input of CalculatorExt.fromfile()
@@ -162,6 +163,7 @@ class CalculatorExt():
 
         return
 
+    @aiida_fetch_linked_files_trigger
     def _fetch_linked_files(self):
         """Link all files provided in self._linked_files
 
@@ -180,7 +182,6 @@ class CalculatorExt():
                 dest_filename.parent.mkdir(parents=True, exist_ok=True)
                 utils.symlink(src_filename, dest_filename)
 
-    @aiida_pre_calculate_trigger
     def _pre_calculate(self):
         """Perform any necessary pre-calculation steps before running the calculation"""
 
@@ -229,6 +230,7 @@ class CalculatorExt():
             self.atoms = calc.atoms
             self.atoms.calc = self
 
+    @aiida_check_code_is_installed_trigger
     def check_code_is_installed(self):
         # Checks the corresponding code is installed
         if self.command.path == Path():

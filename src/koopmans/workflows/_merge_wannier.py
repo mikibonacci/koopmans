@@ -10,11 +10,13 @@ from koopmans import calculators, projections, utils
 from koopmans.process import Process
 
 try:
+    from aiida.orm import SinglefileData
     from aiida_koopmans.helpers import aiida_get_content_trigger, aiida_write_content_trigger
     has_aiida = True
 except:
+    SinglefileData = None
     has_aiida = False
-    
+    raise
 def merge_wannier_hr_file_contents(filecontents: List[List[str]]) -> List[str]:
     # Reading in each hr file in turn
     hr_list = []
@@ -138,6 +140,9 @@ class InputModel(BaseModel):
 
 class OutputModel(BaseModel):
     dst_file: Path
+    dst_file_content: SinglefileData  = None
+    class Config:
+        arbitrary_types_allowed = True
 
 
 class MergeProcess(Process):
@@ -152,10 +157,10 @@ class MergeProcess(Process):
         filecontents = [get_content(calc, relpath) for calc, relpath in self.inputs.src_files]
 
         merged_filecontents = self.merge_function(filecontents)
-
-        write_content(self.inputs.dst_file, merged_filecontents, actor=self)
         
         self.outputs = self._output_model(dst_file=self.inputs.dst_file)
+        
+        self.outputs.dst_file_content = write_content(self.inputs.dst_file, merged_filecontents, self)
 
 @aiida_get_content_trigger
 def get_content(calc: Union[calculators.Calc, Process], relpath: Path) -> List[str]:
@@ -168,3 +173,4 @@ def write_content(dst_file: Path, merged_filecontents: List[str], actor=None):
     dst_file.parent.mkdir(parents=True, exist_ok=True)
     with open(dst_file, 'w') as f:
         f.write('\n'.join(merged_filecontents))
+    return 

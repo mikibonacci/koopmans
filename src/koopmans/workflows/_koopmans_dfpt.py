@@ -17,7 +17,12 @@ from koopmans.calculators import (KoopmansHamCalculator, PWCalculator,
 
 from ._workflow import Workflow
 
-
+try:
+    from aiida_koopmans.helpers import aiida_dfpt_run_calculator_trigger
+    has_aiida = True
+except:
+    has_aiida = False
+    
 class KoopmansDFPTWorkflow(Workflow):
 
     def __init__(self, scf_kgrid=None, *args, **kwargs):
@@ -308,7 +313,8 @@ class KoopmansDFPTWorkflow(Workflow):
             setattr(calc.parameters, k, v)
 
         return calc
-
+    
+    @aiida_dfpt_run_calculator_trigger
     def run_calculator(self, calc):
         # Create this (possibly nested) directory
         calc.directory.mkdir(parents=True, exist_ok=True)
