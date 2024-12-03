@@ -9,6 +9,8 @@ from koopmans.calculators import (Calc, PhCalculator, ProjwfcCalculator,
                                   ReturnsBandStructure)
 from koopmans.step import Step
 
+from koopmans.pseudopotentials import read_pseudo_file
+
 from .engine import Engine
 
 
@@ -33,8 +35,14 @@ class LocalhostEngine(Engine):
 
     def load_old_calculator(self, calc: Calc):
         return load_old_calculator(calc)
+    
+    def get_pseudo_data(self, workflow):
+        pseudo_data = {}
+        for symbol,filename in workflow.pseudopotentials.items():
+            pseudo_data[symbol] = read_pseudo_file(workflow.parameters.pseudo_directory / filename)
 
-
+        return pseudo_data
+        
 def load_old_calculator(calc):
     # This is a separate function so that it can be imported by other engines
     loaded_calc = calc.__class__.fromfile(calc.directory / calc.prefix)

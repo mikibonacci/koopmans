@@ -11,7 +11,8 @@
         "gb_correction" : true,
         "eps_inf": 5.3,
         "from_scratch": true,
-        "npool": 4
+        "npool": 4,
+        "calculate_bands": false
     },
     "atoms": {
        "cell_parameters": {

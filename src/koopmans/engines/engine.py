@@ -46,6 +46,8 @@ class Engine(ABC):
         # Print the bibliography
         workflow.print_bib()
 
+        workflow.pseudo_data = self.get_pseudo_data(workflow)
+        
         steps_generator = workflow.steps_generator()
         while True:
             steps_to_run: tuple[Step, ...]
@@ -157,6 +159,10 @@ class Engine(ABC):
 
     @abstractmethod
     def load_old_calculator(self, calc: Calc) -> Calc:
+        ...
+        
+    @abstractmethod
+    def get_pseudo_data(self, workflow: Workflow) -> dict:
         ...
 
 

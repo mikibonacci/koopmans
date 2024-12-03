@@ -403,16 +403,16 @@ class ReturnsBandStructure(ABC):
         ...
 
     @abstractmethod
-    def vbm_energy(self) -> float:
+    def vbm_energy(self, nelec: int | None = None) -> float:
         ...
 
-    def generate_band_structure(self):
+    def generate_band_structure(self, nelec: int | None = None): 
         if isinstance(self.parameters.kpts, BandPath):
             path = self.parameters.kpts
             if len(path.kpts) > 1:
                 # Fetch bandstructure from results
                 eigenvalues_np = self.eigenvalues_from_results()
-                self.results['band structure'] = BandStructure(path, eigenvalues_np, reference=self.vbm_energy())
+                self.results['band structure'] = BandStructure(path, eigenvalues_np, reference=self.vbm_energy(nelec=nelec))
         return
 
 

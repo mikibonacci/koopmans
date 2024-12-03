@@ -105,6 +105,7 @@ class Workflow(utils.HasDirectory, ABC):
     kpoints: Kpoints
     pseudopotentials: Dict[str, str]
     pseudo_dir: Path
+    pseudo_data: Dict[str, Dict[str, Any]]
     projections: ProjectionBlocks
     ml_model: Optional[AbstractMLModel]
     snapshots: List[Atoms]

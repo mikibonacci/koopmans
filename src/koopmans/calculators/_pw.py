@@ -78,12 +78,12 @@ class PWCalculator(CalculatorExt, Espresso, ReturnsBandStructure, CalculatorABC)
         if self.parameters.calculation == 'scf':
             return super().check_convergence()
 
-    def vbm_energy(self) -> float:
+    def vbm_energy(self, nelec: int | None = None) -> float:
         # Fetch the eigenvalues
         eigenvals = self.eigenvalues_from_results()
 
         # Fetch the total number of electrons in the system
-        nelec = nelec_from_pseudos(self.atoms, self.parameters.pseudopotentials,
+        nelec = nelec if nelec else nelec_from_pseudos(self.atoms, self.parameters.pseudopotentials,
                                    self.directory / self.parameters.pseudo_dir) + self.parameters.get('tot_charge', 0)
 
         # Determine the number of occupied bands in each spin channel
