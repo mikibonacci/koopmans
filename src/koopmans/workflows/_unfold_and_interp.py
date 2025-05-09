@@ -159,7 +159,9 @@ class UnfoldAndInterpolateWorkflow(Workflow):
         if merged_dos is not None:
             merged_dos.e_skn -= merged_bs.reference
 
-        self.plot_bandstructure(merged_bs.subtract_reference(), merged_dos)
+        # Plot
+        if "AiiDA" not in getattr(self.engine, 'name', 'Local'):
+            self.plot_bandstructure(merged_bs.subtract_reference(), merged_dos)
 
         # Shift the DOS back
         if merged_dos is not None:

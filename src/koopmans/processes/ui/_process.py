@@ -220,6 +220,10 @@ class UnfoldAndInterpolateProcess(Process[UnfoldAndInterpolateInputs, UnfoldAndI
             if self.inputs.parameters.w90_input_sc:
                 utils.warn('file `wf_phases.dat` not found; phases are ignored')
             self._phases = []
+        except KeyError:
+            if self.inputs.parameters.w90_input_sc:
+                utils.warn('file `wf_phases.dat` not found; phases are ignored')
+            self._phases = []
         return
 
     def write_results(self) -> None:

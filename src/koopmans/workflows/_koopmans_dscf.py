@@ -364,6 +364,7 @@ class KoopmansDSCFWorkflow(Workflow[KoopmansDSCFOutputs]):
                     koopmans_ham_files=koopmans_ham_files,
                     dft_ham_files=dft_ham_files,
                     smooth_dft_ham_files=self._smooth_dft_ham_files)
+                
                 ui_workflow.proceed()
                 if ui_workflow.status != Status.COMPLETED:
                     return
@@ -564,6 +565,7 @@ class DeltaSCFIterationWorkflow(Workflow[DeltaSCFIterationOutputs]):
 
         # Loop over removing/adding an electron from/to each orbital
         assert self.bands is not None
+        orbital_subworkflows: list[Workflow] = []
         for band in self.bands:
             # Working out what to print for the orbital heading (grouping skipped bands together)
             if band in self.bands.to_solve or band == self.bands.get(spin=band.spin)[-1]:
@@ -601,12 +603,19 @@ class DeltaSCFIterationWorkflow(Workflow[DeltaSCFIterationOutputs]):
                     self, band=band, trial_calc=trial_calc, dummy_outdir=dummy_outdir, i_sc=self._i_sc,
                     alpha_indep_calcs=self._alpha_indep_calcs
                 )
-                subwf.proceed()
-                if subwf.status != Status.COMPLETED:
-                    return
-                alpha = subwf.outputs.alpha
-                error = subwf.outputs.error
-                self._dummy_outdirs[(band.index, band.spin)] = subwf.outputs.dummy_outdir
+                orbital_subworkflows.append(subwf)
+        
+        # exit the bands loop to submit all the subworkflows in parallel       
+        for wf in orbital_subworkflows:
+            wf.proceed()
+        if any([wf.status != Status.COMPLETED for wf in orbital_subworkflows]):
+            return
+
+        # going back into the bands loop to update the bands with the results of the subworkflows
+        for band, subwf in zip(self.bands.to_solve, orbital_subworkflows):
+            alpha = subwf.outputs.alpha
+            error = subwf.outputs.error
+            self._dummy_outdirs[(band.index, band.spin)] = subwf.outputs.dummy_outdir
 
             for b in self.bands:
                 if b == band or (b.group is not None and b.group == band.group):
@@ -788,7 +797,9 @@ class OrbitalDeltaSCFWorkflow(Workflow[OrbitalDeltaSCFOutputs]):
                 if 'dummy' in calc_type:
                     dummy_outdir = subwf.outputs.outdir
             else:
-                self.run_steps(calc)
+                status = self.run_steps(calc)
+                if status != Status.COMPLETED:
+                    return
                 if 'dummy' in calc_type:
                     dummy_outdir = File(calc, calc.parameters.outdir)
 

@@ -272,6 +272,7 @@ def parse_wannier_hr_file_contents(content: str) -> Tuple[np.ndarray, np.ndarray
         - the list of weights
         - the number of wannier functions
     """
+    
     lines = content.rstrip('\n').split('\n')
     if 'written on' in lines[0].lower():
         pass

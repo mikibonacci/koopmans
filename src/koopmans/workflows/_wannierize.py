@@ -172,7 +172,7 @@ class WannierizeWorkflow(Workflow[WannierizeOutput]):
                 block_subworkflows.append(wannierize_block_subworkflow)
 
             for wf in block_subworkflows:
-                wf.run()
+                wf.proceed()
             if any([wf.status != Status.COMPLETED for wf in block_subworkflows]):
                 return
 
@@ -364,7 +364,8 @@ class WannierizeWorkflow(Workflow[WannierizeOutput]):
                 dos._energies -= pw_bands.reference
 
             # Plot
-            self.plot_bandstructure(bs_list, dos, bsplot_kwargs=bsplot_kwargs_list)
+            if "AiiDA" not in getattr(self.engine, 'name', 'Local'):
+                self.plot_bandstructure(bs_list, dos, bsplot_kwargs=bsplot_kwargs_list)
 
         # Store the results
         self.outputs = self.output_model(band_structures=bs_list, dos=dos, u_matrices_files=u_matrices_files,
@@ -448,7 +449,9 @@ class WannierizeBlockWorkflow(Workflow[WannierizeBlockOutput]):
         # 3) Wannier90 calculation
         calc_w90: calculators.Wannier90Calculator = \
             self.new_calculator(calc_type, init_orbitals=init_orbs,
-                                bands_plot=self.parameters.calculate_bands, **self.block.w90_kwargs)
+                                bands_plot=self.parameters.calculate_bands,
+                                **self.block.w90_kwargs
+                            )
         calc_w90.prefix = 'wannier90'
         for ext in ['.eig', '.amn', '.mmn']:
             calc_w90.link(File(calc_p2w, calc_p2w.parameters.seedname + ext), calc_w90.prefix + ext, symlink=True)
@@ -517,8 +520,11 @@ class WannierizeBlockWorkflow(Workflow[WannierizeBlockOutput]):
             if calc.parameters.gamma_only != self.kpoints.gamma_only:
                 # forcing W90 to follow the same logic of PW for the gamma_trick
                 calc.parameters.gamma_only = self.kpoints.gamma_only
-        if calc_type == 'pw2wannier':
-            if self._force_nspin2 and not self.parameters.spin_polarized:
+
+        if self._force_nspin2 and not self.parameters.spin_polarized:
+            if calc_type == 'pw2wannier':
                 calc.parameters.spin_component = 'up'
+            if calc_type == 'w90':
+                calc.parameters.spin = 'up'
 
         return calc

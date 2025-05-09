@@ -78,7 +78,7 @@ def initialize_engine(engine_arg: str, engine_config: str | None) -> Engine:
                 engine_config = json.load(f)
         else:
             engine_config = None
-        engine = AiiDAEngine(configuration=engine_config)
+        engine = AiiDAEngine(step_data={'configuration': engine_config})
     else:
         raise NotImplementedError(f"Unknown engine '{engine_arg}'")
     return engine
@@ -138,9 +138,7 @@ def main():
         'library', type=str, help="the pseudopotential library to uninstall", nargs='+', action=UninstallPseudoAction)
     add_engine_flag(pseudos_uninstall)
 
-    # Hide traceback
-    sys.tracebacklimit = 0
-    default_excepthook, sys.excepthook = sys.excepthook, _custom_exception_hook
+   
 
     # Parse arguments
     args = parser.parse_args()
@@ -153,6 +151,9 @@ def main():
     if getattr(args, 'engine', None):
         engine = initialize_engine(args.engine, getattr(args, 'engine_config', None))
 
+     # Hide traceback
+    sys.tracebacklimit = 0
+    default_excepthook, sys.excepthook = sys.excepthook, _custom_exception_hook
     # For koopmans pseudo list, perform the action and exit
     if args.command == 'pseudos':
         if hasattr(args, 'action'):

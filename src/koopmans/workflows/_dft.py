@@ -193,7 +193,9 @@ class DFTBandsWorkflow(DFTWorkflow[DFTBandsOutput]):
 
         # Plot the band structure and DOS
         if self.parameters.calculate_bands in (True, None):
-            self.plot_bandstructure(bs.subtract_reference(), dos)
+            # Plot
+            if "AiiDA" not in getattr(self.engine, 'name', 'Local'):
+                self.plot_bandstructure(bs.subtract_reference(), dos)
         elif dos is not None:
             workflow_name = self.__class__.__name__.lower()
             filename = f'{self.name}_{workflow_name}_dos'

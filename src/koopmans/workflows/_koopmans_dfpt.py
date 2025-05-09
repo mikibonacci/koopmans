@@ -325,15 +325,16 @@ class KoopmansDFPTWorkflow(Workflow[KoopmansDFPTOutputs]):
                 if not dft_ham_files:
                     raise ValueError(
                         'The DFT Hamiltonian files have not been generated but are required for the UI workflow')
-                ui_workflow = UnfoldAndInterpolateWorkflow.fromparent(
-                    self, dft_ham_files=dft_ham_files, koopmans_ham_files=koopmans_ham_files)
+                if "AiiDA" not in getattr(self.engine, 'name', 'Local'):
+                    ui_workflow = UnfoldAndInterpolateWorkflow.fromparent(
+                        self, dft_ham_files=dft_ham_files, koopmans_ham_files=koopmans_ham_files)
 
-                ui_workflow.proceed()
-                if ui_workflow.status != Status.COMPLETED:
-                    return
+                    ui_workflow.proceed()
+                    if ui_workflow.status != Status.COMPLETED:
+                        return
 
         # Plotting
-        if self._perform_ham_calc:
+        if self._perform_ham_calc and "AiiDA" not in getattr(self.engine, 'name', 'Local'):
             self.plot_bandstructure()
 
         self.status = Status.COMPLETED

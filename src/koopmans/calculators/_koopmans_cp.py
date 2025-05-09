@@ -222,8 +222,12 @@ class KoopmansCPCalculator(CalculatorCanEnforceSpinSym, CalculatorExt, Espresso_
         non-linear core corrections. This function automatically defines this small box using a conservative guess.
         """
         has_nlcc = False
-        for p in self.parameters.pseudopotentials.values():
-            upf = pseudopotentials.read_pseudo_file(self.directory / self.parameters.pseudo_dir / p)
+        for element,p in self.parameters.pseudopotentials.items():
+            # NOTE: to be fixed. This is just a temporary solution to get the code running within AiiDA
+            try:
+                upf = pseudopotentials.read_pseudo_file(self.directory / self.parameters.pseudo_dir / p)
+            except:
+                upf = self.engine.get_pseudopotential(library=self.engine.step_data.pseudo_family, element=element)
             if upf['header']['core_correction']:
                 has_nlcc = True
         if has_nlcc and (self.parameters.nr1b is None or self.parameters.nr2b is None or self.parameters.nr3b is None):
@@ -319,7 +323,7 @@ class KoopmansCPCalculator(CalculatorCanEnforceSpinSym, CalculatorExt, Espresso_
             n_empty = self.parameters.get('nbnd', n_filled) - n_filled
 
             # Read the hamiltonian
-            ham_filled = read_ham_file(ham_dir / filename)[:n_filled, :n_filled]
+            ham_filled = self.engine.read_ham_file(calculator =self, filename=ham_dir / filename)[:n_filled, :n_filled]
 
             if self.has_empty_states():
                 # Construct the filename
@@ -332,7 +336,7 @@ class KoopmansCPCalculator(CalculatorCanEnforceSpinSym, CalculatorExt, Espresso_
                 filename += '.xml'
 
                 # Read the hamiltonian
-                ham_empty = read_ham_file(ham_dir / filename)[:n_empty, :n_empty]
+                ham_empty = self.engine.read_ham_file(calculator =self, filename=ham_dir / filename)[:n_empty, :n_empty]
                 ham = block_diag(ham_filled, ham_empty)
             else:
                 ham = ham_filled
@@ -373,7 +377,8 @@ class KoopmansCPCalculator(CalculatorCanEnforceSpinSym, CalculatorExt, Espresso_
             ham_matrix = self.read_ham_pkl_files(bare)
         else:
             ham_matrix = self.read_ham_xml_files(bare)
-            self.write_ham_pkl_files(ham_matrix, bare)
+            if getattr(self.engine,"name","localhost") != "AiiDAEngine":
+                self.write_ham_pkl_files(ham_matrix, bare)
 
         return ham_matrix
 

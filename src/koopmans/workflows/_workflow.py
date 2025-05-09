@@ -1653,6 +1653,7 @@ def spin_symmetrize(wf: Workflow, master_calc: calculators.Calc) -> Status:
     status = wf.run_steps(calc_nspin2_dummy)
     if status != Status.COMPLETED:
         return status
+    
     master_calc.link(File(calc_nspin2_dummy, calc_nspin2_dummy.parameters.outdir), master_calc.parameters.outdir)
 
     # Copy over nspin=1 wavefunction to nspin=2 tmp directory

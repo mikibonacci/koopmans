@@ -93,6 +93,7 @@ class FoldToSupercellWorkflow(Workflow):
                     else:
                         evc_fnames = ['evcw1.dat', 'evcw2.dat']
 
+                    # TODO: do them in parallel
                     for evc_fname in evc_fnames:
                         src_files = [f for s in subset for f in converted_files[s.id] if str(f.name) == evc_fname]
                         merge_proc = MergeEVCProcess(kgrid=self.kpoints.grid,
